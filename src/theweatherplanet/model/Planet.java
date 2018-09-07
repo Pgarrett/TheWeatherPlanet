@@ -32,6 +32,9 @@ public class Planet {
 
     public int newDay() {
 	_currentPosition = ((_currentPosition + _speed) % Constants.ORBIT_SIZE);
+	if (_currentPosition < 0) {
+	    _currentPosition += Constants.ORBIT_SIZE;
+	}
 	return getCurrentPosition();
     }
 
