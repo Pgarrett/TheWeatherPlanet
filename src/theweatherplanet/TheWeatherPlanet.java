@@ -1,11 +1,8 @@
-/* AMCO @ 2018 */
-
 package theweatherplanet;
 
 public class TheWeatherPlanet {
 
-    public static void main(String[] args) {
-        // TODO
+    public static void main(final String[] args) {
     }
 
 }
