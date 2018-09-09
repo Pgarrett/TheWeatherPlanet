@@ -94,60 +94,28 @@ public class Forecast {
     private boolean isSunInMiddle(final int maxP, final int minP, final int betasoidP) {
 	final int midPointB = (maxP + 180) % 360;
 	if (maxP >= 0 && maxP < 90) {
-	    //A: quadrant 1
-	    //B: quadrant 3
 	    if (betasoidP >= 180 && betasoidP < 270) {
-		if (minP > maxP && minP < midPointB) {
-		    return false;
-		} else {
-		    return true;
-		}
+		return !(minP > maxP && minP < midPointB);
 	    } else {
 		return false;
 	    }
 	} else if (maxP >= 90 && maxP < 180) {
-	    //A: quadrant 2
-	    //B: quadrant 4
 	    if (betasoidP > 180 && betasoidP < midPointB) {
-		if (minP > 0 && minP < (betasoidP + 180) % 360) {
-		    return true;
-		} else {
-		    return false;
-		}
+		return minP > 0 && minP < (betasoidP + 180) % 360;
 	    } else {
 		return false;
 	    }
 	} else if (maxP >= 180 && maxP < 270) {
-	    //A: quadrant 3
-	    //B: quadrant 1
 	    if (minP > midPointB) {
-		if (betasoidP > midPointB && betasoidP < (minP + 180) % 360) {
-		    return false;
-		} else {
-		    return true;
-		}
+		return !(betasoidP > midPointB && betasoidP < (minP + 180) % 360);
 	    } else {
-		if (betasoidP > midPointB && betasoidP < (minP + 180) % 360) {
-		    return true;
-		} else {
-		    return false;
-		}
+		return betasoidP > midPointB && betasoidP < (minP + 180) % 360;
 	    }
 	} else {
-	    //A: quadrant 4
-	    //B: quadrant 2
 	    if (minP < midPointB) {
-		if (betasoidP > midPointB && betasoidP < (minP + 180) % 360) {
-		    return true;
-		} else {
-		    return false;
-		}
+		return betasoidP > midPointB && betasoidP < (minP + 180) % 360;
 	    } else {
-		if (betasoidP > midPointB && betasoidP < (minP + 180) % 360) {
-		    return false;
-		} else {
-		    return true;
-		}
+		return !(betasoidP > midPointB && betasoidP < (minP + 180) % 360);
 	    }
 	}
     }
