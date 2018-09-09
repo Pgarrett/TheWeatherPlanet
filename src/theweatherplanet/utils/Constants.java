@@ -9,6 +9,8 @@ public class Constants {
     public static final String V_ARG = "-v";
     public static final String VERSION_ARG = "--version";
     
+    public static final String DIA = "dia";
+    public static final String CONDICION = "condicion";
     public static final String SEQUIA = "sequia";
     public static final String LLUVIA = "lluvia";
     public static final String OPTIMA = "optima";
