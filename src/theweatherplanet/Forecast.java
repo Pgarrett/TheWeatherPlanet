@@ -57,7 +57,7 @@ public class Forecast {
 	final double m3 = Utilities.round((vulcanY - ferengiY) / (vulcanX - ferengiX));
 	return m1 == m2 && m2 == m3;
     }
-    
+
     private int getSide(final int planetP, final int midPointA, final int midPointB) {
 	if (midPointA >= 0 && midPointA < 180) {
 	    //A: quadrant 1-2
@@ -77,7 +77,7 @@ public class Forecast {
 	    }
 	}
     }
-    
+
     private boolean areInSameQuadrant(final int ferengiP, final int vulcanP, final int betasoidP) {
 	if (ferengiP >= 0 && ferengiP < 90 && vulcanP >= 0 && vulcanP < 90 && betasoidP >= 0 && betasoidP < 90) {
 	    return true;
@@ -90,7 +90,7 @@ public class Forecast {
 	}
 	return false;
     }
-    
+
     private boolean isSunInMiddle(final int maxP, final int minP, final int betasoidP) {
 	final int midPointB = (maxP + 180) % 360;
 	if (maxP >= 0 && maxP < 90) {
@@ -121,7 +121,7 @@ public class Forecast {
 	    //A: quadrant 3
 	    //B: quadrant 1
 	    if (minP > midPointB) {
-		if (betasoidP > midPointB || betasoidP < (minP + 180) % 360) {
+		if (betasoidP > midPointB && betasoidP < (minP + 180) % 360) {
 		    return false;
 		} else {
 		    return true;
@@ -136,10 +136,18 @@ public class Forecast {
 	} else {
 	    //A: quadrant 4
 	    //B: quadrant 2
-	    if (minP < maxP && minP > midPointB) {
-		return false;
+	    if (minP < midPointB) {
+		if (betasoidP > midPointB && betasoidP < (minP + 180) % 360) {
+		    return true;
+		} else {
+		    return false;
+		}
 	    } else {
-		return true;
+		if (betasoidP > midPointB && betasoidP < (minP + 180) % 360) {
+		    return false;
+		} else {
+		    return true;
+		}
 	    }
 	}
     }
