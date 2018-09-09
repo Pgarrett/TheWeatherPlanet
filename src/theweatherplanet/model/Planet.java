@@ -1,4 +1,3 @@
-
 package theweatherplanet.model;
 
 import theweatherplanet.utils.Constants;

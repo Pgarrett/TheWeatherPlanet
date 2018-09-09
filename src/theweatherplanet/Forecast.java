@@ -1,8 +1,14 @@
-
 package theweatherplanet;
 
+import ace.Ace;
+import ace.constants.STRINGS;
+import ace.files.TextFiles;
+import ace.gson.Json;
 import ace.gson.builders.JsonObjectBuilder;
+import ace.text.Strings;
 import com.google.gson.JsonArray;
+import java.io.File;
+import org.apache.log4j.Logger;
 import theweatherplanet.model.Planet;
 import theweatherplanet.utils.Constants;
 import theweatherplanet.utils.Utilities;
@@ -12,30 +18,30 @@ public class Forecast {
     private final Integer _yearsToForecast;
     private final Integer _daysToForecast;
 
+    private final File _jsonDataFile;
+
     private final JsonArray _forecast;
 
     private int _maxRainDay;
-    private int _maxRainDayTriangle;
+    private double _maxRainDayTriangle;
 
     private int _totalDry;
     private int _totalOptimum;
     private int _totalRain;
-    private int _totalNoInfo;
+    
+    private static Logger _logger = Logger.getLogger(TheWeatherPlanet.class);
 
-    public Forecast(final Integer yearsToForecast) {
+    public Forecast(final Integer yearsToForecast, final File jsonDataFile) {
 	_yearsToForecast = yearsToForecast;
 	_daysToForecast = _yearsToForecast * Constants.DAYS_OF_YEAR;
 	_forecast = new JsonArray();
+	_jsonDataFile = jsonDataFile;
     }
 
     private void newDay(final Planet ferengi, final Planet betasoid, final Planet vulcan) {
 	ferengi.newDay();
 	betasoid.newDay();
 	vulcan.newDay();
-    }
-
-    private void printDay(final Planet p) {
-	System.out.println("Planet: " + p.getName() + ". Current Position: " + p.getCurrentPosition() + ". Coordinates: (" + p.getXPosition() + ", " + p.getYPosition() + ")");
     }
 
     private boolean isDroughtForecast(final int ferengiP, final int vulcanP, final int betasoidP) {
@@ -45,13 +51,14 @@ public class Forecast {
 	return result;
     }
 
-    private boolean isOptimumConditionForecast(final Planet ferengi, final Planet vulcan, final Planet betasoid) {
+    private boolean isOptimumConditionForecast(final Planet ferengi, final Planet vulcan, final Planet betasoid, final int day) {
 	final double ferengiX = ferengi.getXPosition();
 	final double ferengiY = ferengi.getYPosition();
 	final double vulcanX = vulcan.getXPosition();
 	final double vulcanY = vulcan.getYPosition();
 	final double betasoidX = betasoid.getXPosition();
 	final double betasoidY = betasoid.getYPosition();
+
 	final double m1 = Utilities.round((betasoidY - vulcanY) / (betasoidX - vulcanX));
 	final double m2 = Utilities.round((betasoidY - ferengiY) / (betasoidX - ferengiX));
 	final double m3 = Utilities.round((vulcanY - ferengiY) / (vulcanX - ferengiX));
@@ -60,16 +67,12 @@ public class Forecast {
 
     private int getSide(final int planetP, final int midPointA, final int midPointB) {
 	if (midPointA >= 0 && midPointA < 180) {
-	    //A: quadrant 1-2
-	    //B: quadrant 3-4
 	    if (planetP > midPointA && planetP < midPointB) {
 		return 1;
 	    } else {
 		return 0;
 	    }
 	} else {
-	    //A: quadrant 4-3
-	    //B: quadrant 2-1
 	    if (planetP < midPointA && planetP > midPointB) {
 		return 1;
 	    } else {
@@ -139,49 +142,83 @@ public class Forecast {
 	}
     }
 
-    private String getForecast(final Planet ferengi, final Planet vulcan, final Planet betasoid) {
+    private double getDistanceBetweenPlanets(final Planet planetA, final Planet planetB) {
+	return Math.sqrt(Math.pow(planetA.getXPosition() - planetB.getXPosition(), 2) + Math.pow(planetA.getYPosition() - planetB.getYPosition(), 2));
+    }
+
+    private void updateMaxTriangleSize(final Planet ferengi, final Planet vulcan, final Planet betasoid, final int day) {
+	final double ferengiVulcanD = getDistanceBetweenPlanets(ferengi, vulcan);
+	final double vulcanBetasoidD = getDistanceBetweenPlanets(vulcan, betasoid);
+	final double betasoidFerengiD = getDistanceBetweenPlanets(betasoid, ferengi);
+	final double totalDistance = ferengiVulcanD + vulcanBetasoidD + betasoidFerengiD;
+	if (totalDistance >= _maxRainDayTriangle) {
+	    _maxRainDayTriangle = totalDistance;
+	    _maxRainDay = day;
+	}
+    }
+
+    private String getForecast(final Planet ferengi, final Planet vulcan, final Planet betasoid, final int day) {
 	final int ferengiP = ferengi.getCurrentPosition();
 	final int vulcanP = vulcan.getCurrentPosition();
 	final int betasoidP = betasoid.getCurrentPosition();
 	if (isDroughtForecast(ferengiP, vulcanP, betasoidP)) {
 	    _totalDry++;
 	    return Constants.SEQUIA;
-	} else if (isOptimumConditionForecast(ferengi, vulcan, betasoid)) {
+	} else if (isOptimumConditionForecast(ferengi, vulcan, betasoid, day)) {
 	    _totalOptimum++;
 	    return Constants.OPTIMA;
 	} else if (isRainyDayForecast(ferengiP, vulcanP, betasoidP)) {
 	    _totalRain++;
+	    updateMaxTriangleSize(ferengi, vulcan, betasoid, day);
 	    return Constants.LLUVIA;
 	}
-	_totalNoInfo++;
 	return Constants.SIN_INFORMACION;
+    }
+    
+    private void cleanup(final File startFile, final File errorFile) {
+	if (Ace.assigned(startFile) && startFile.exists()) {
+	    if (!startFile.delete()) {
+		_logger.error(Strings.concat("El archivo '", startFile.getAbsolutePath(), "' no pudo ser eliminado."));
+	    }
+	}
+	if (Ace.assigned(errorFile) && errorFile.exists()) {
+	    if (!errorFile.delete()) {
+		_logger.error(Strings.concat("El archivo '", errorFile.getAbsolutePath(), "' no pudo ser eliminado."));
+	    }
+	}
     }
 
     public void predict() {
+	final File startFile = new File(Constants.START_FILE);
+	final File errorFile = new File(Constants.ERROR_FILE);
+	cleanup(startFile, errorFile);
+	TextFiles.write(startFile, STRINGS.EMPTY);
 	final Planet ferengi = new Planet("Ferengis", true, 1, 500);
 	final Planet vulcan = new Planet("Vulcanos", false, 5, 1000);
 	final Planet betasoid = new Planet("Betasoides", true, 3, 2000);
 	for (int i = 0; i < _daysToForecast; i++) {
-	    final String forecast = getForecast(ferengi, vulcan, betasoid);
+	    final String forecast = getForecast(ferengi, vulcan, betasoid, i);
 	    _forecast.add(
 		new JsonObjectBuilder()
 		    .add(Constants.DIA, i)
 		    .add(Constants.CONDICION, forecast)
 		    .getAsJsonObject()
 	    );
-//	    if (forecast.equals(Constants.OPTIMA)) {
-//		printDay(ferengi);
-//		printDay(vulcan);
-//		printDay(betasoid);
-//		System.out.println("");
-//		System.out.println("");
-//	    }
 	    newDay(ferengi, betasoid, vulcan);
 	}
-	System.out.println("Total Dry: " + _totalDry);
-	System.out.println("Total Optimum: " + _totalOptimum);
-	System.out.println("Total Rain: " + _totalRain);
-	System.out.println("Total No Info: " + _totalNoInfo);
+	if (TextFiles.write(_jsonDataFile, Json.JsonElementToPrettyString(
+	    new JsonObjectBuilder()
+		.add(Constants.DIA_MAXIMA_LLUVIA, _maxRainDay)
+		.add(Constants.TOTAL_SEQUIA, _totalDry)
+		.add(Constants.TOTAL_LLUVIA, _totalRain)
+		.add(Constants.TOTAL_CONDICIONES_OPTIMAS, _totalOptimum)
+		.add(Constants.PRONOSTICO, _forecast)
+		.getAsJsonObject()))) {
+	    cleanup(startFile, errorFile);
+	} else {
+	    cleanup(startFile, null);
+	    TextFiles.write(errorFile, STRINGS.EMPTY);
+	}
     }
 
 }

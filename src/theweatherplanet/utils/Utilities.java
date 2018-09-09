@@ -1,5 +1,3 @@
-/* AMCO @ 2018 */
-
 package theweatherplanet.utils;
 
 public class Utilities {
