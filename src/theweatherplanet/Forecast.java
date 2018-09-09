@@ -120,14 +120,14 @@ public class Forecast {
 	} else if (maxP >= 180 && maxP < 270) {
 	    //A: quadrant 3
 	    //B: quadrant 1
-	    if (betasoidP < maxP && betasoidP > minP) {
-		if (minP < maxP && minP > midPointB) {
+	    if (minP > midPointB) {
+		if (betasoidP > midPointB || betasoidP < (minP + 180) % 360) {
 		    return false;
 		} else {
 		    return true;
 		}
 	    } else {
-		if (minP < maxP && minP > midPointB) {
+		if (betasoidP > midPointB && betasoidP < (minP + 180) % 360) {
 		    return true;
 		} else {
 		    return false;
