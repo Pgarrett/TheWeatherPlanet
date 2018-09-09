@@ -1,19 +1,21 @@
+
 package theweatherplanet.model;
 
 import theweatherplanet.utils.Constants;
+import theweatherplanet.utils.Utilities;
 
 public class Planet {
 
     private final String _name;
     private final boolean _clockwise;
     private final int _speed;
-    private final int _distanceFromSun;
+    private final double _distanceFromSun;
     private int _currentPosition;
 
-    public Planet(final String name, final boolean clockwise, final int speed, final int distanceFromSun) {
+    public Planet(final String name, final boolean clockwise, final int speed, final double distanceFromSun) {
 	_name = name;
 	_clockwise = clockwise;
-	_speed = _clockwise ? speed : speed * -1;
+	_speed = _clockwise ? speed * -1 : speed;
 	_distanceFromSun = distanceFromSun;
 	_currentPosition = 0;
     }
@@ -22,7 +24,7 @@ public class Planet {
 	return _name;
     }
 
-    public int getDistanceFromSun() {
+    public double getDistanceFromSun() {
 	return _distanceFromSun;
     }
 
@@ -36,6 +38,14 @@ public class Planet {
 	    _currentPosition += Constants.ORBIT_SIZE;
 	}
 	return getCurrentPosition();
+    }
+
+    public double getXPosition() {
+	return Utilities.round(_distanceFromSun * (Math.cos(Math.toRadians(_currentPosition))));
+    }
+
+    public double getYPosition() {
+	return Utilities.round(_distanceFromSun * (Math.sin(Math.toRadians(_currentPosition))));
     }
 
 }

@@ -12,7 +12,7 @@ public class TheWeatherPlanet {
     private static void printVersionNumber() {
 	System.out.println("########################################");
 	System.out.println("###  The Weather Planet Application  ###");
-	System.out.println("###           Version  " + VERSION + "          ###");
+	System.out.println("###           Version  " + VERSION + "         ###");
 	System.out.println("########################################");
     }
 
@@ -48,6 +48,7 @@ public class TheWeatherPlanet {
 	    if (Ace.assigned(yearsToForecast)) {
 		final Forecast f = new Forecast(yearsToForecast);
 		f.predict();
+		System.exit(0);
 	    }
 	}
 	printCorrectUsage();
