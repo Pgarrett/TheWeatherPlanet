@@ -70,7 +70,6 @@ public class TheWeatherPlanet {
 	    System.exit(0);
 	}
 	System.exit(-1);
-
     }
 
 }
