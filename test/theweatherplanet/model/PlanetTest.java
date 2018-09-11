@@ -32,7 +32,7 @@ public class PlanetTest {
 	System.out.println("getDistanceFromSun");
 	Planet instance = new Planet("test", true, 5, 2000);
 	int expResult = 2000;
-	int result = instance.getDistanceFromSun();
+	double result = instance.getDistanceFromSun();
 	assertEquals(expResult, result);
     }
 
