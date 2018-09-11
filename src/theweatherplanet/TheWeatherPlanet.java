@@ -21,7 +21,7 @@ public class TheWeatherPlanet {
     private static JsonObject readConfig() {
 	final JsonObject config = Json.readFileAsJsonObject(Constants.CONFIG_FILE);
 	if (Ace.assigned(config)) {
-	    if (config.has("years") && config.has("data-file")) {
+	    if (config.has(Constants.YEARS) && config.has(Constants.DATA_FILE) && config.has(Constants.DATA_DIRECTORY)) {
 		return config;
 	    }
 	}
@@ -34,17 +34,17 @@ public class TheWeatherPlanet {
 	    System.err.println(Constants.APPLICATION_EXIT);
 	    return false;
 	}
-	PropertyConfigurator.configureAndWatch("config/log4j.properties");
+	PropertyConfigurator.configureAndWatch(Constants.LOG4J_FILE);
 	if (Constants.CONFIG_FILE.exists()) {
 	    final JsonObject config = readConfig();
 	    if (Ace.assigned(config)) {
-		_yearsToForecast = Json.obtainInteger(config, "years");
-		_dataDirectory = new File(Json.obtainString(config, "data-directory"));
+		_yearsToForecast = Json.obtainInteger(config, Constants.YEARS);
+		_dataDirectory = new File(Json.obtainString(config, Constants.DATA_DIRECTORY));
 		if (_dataDirectory.exists()) {
-		    _dataFile = new File(_dataDirectory, Json.obtainString(config, "data-file"));
-		return true;
+		    _dataFile = new File(_dataDirectory, Json.obtainString(config, Constants.DATA_FILE));
+		    return true;
 		}
-		_logger.error(Strings.concat("El directorio '", Json.obtainString(config, "data-directory"), "' no existe."));
+		_logger.error(Strings.concat("El directorio '", Json.obtainString(config, Constants.DATA_DIRECTORY), "' no existe."));
 		return false;
 	    } else {
 		_logger.error("La configuración no es correcta, por favor verificar.");
