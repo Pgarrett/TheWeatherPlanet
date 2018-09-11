@@ -1,3 +1,4 @@
+
 package theweatherplanet;
 
 import ace.Ace;
@@ -28,8 +29,8 @@ public class Forecast {
     private int _totalDry;
     private int _totalOptimum;
     private int _totalRain;
-    
-    private static Logger _logger = Logger.getLogger(TheWeatherPlanet.class);
+
+    private static Logger _logger = Logger.getLogger(Forecast.class);
 
     public Forecast(final Integer yearsToForecast, final File jsonDataFile) {
 	_yearsToForecast = yearsToForecast;
@@ -58,7 +59,6 @@ public class Forecast {
 	final double vulcanY = vulcan.getYPosition();
 	final double betasoidX = betasoid.getXPosition();
 	final double betasoidY = betasoid.getYPosition();
-
 	final double m1 = Utilities.round((betasoidY - vulcanY) / (betasoidX - vulcanX));
 	final double m2 = Utilities.round((betasoidY - ferengiY) / (betasoidX - ferengiX));
 	final double m3 = Utilities.round((vulcanY - ferengiY) / (vulcanX - ferengiX));
@@ -175,37 +175,34 @@ public class Forecast {
 	return Constants.SIN_INFORMACION;
     }
     
+    private void logFileNotDeleted(final File file) {
+	_logger.error(Strings.concat("El archivo '", file.getAbsolutePath(), "' no pudo ser eliminado."));
+    }
+
     private void cleanup(final File startFile, final File errorFile) {
 	if (Ace.assigned(startFile) && startFile.exists()) {
 	    if (!startFile.delete()) {
-		_logger.error(Strings.concat("El archivo '", startFile.getAbsolutePath(), "' no pudo ser eliminado."));
+		logFileNotDeleted(startFile);
 	    }
 	}
 	if (Ace.assigned(errorFile) && errorFile.exists()) {
 	    if (!errorFile.delete()) {
-		_logger.error(Strings.concat("El archivo '", errorFile.getAbsolutePath(), "' no pudo ser eliminado."));
+		logFileNotDeleted(errorFile);
 	    }
 	}
     }
 
-    public void predict() {
-	final File startFile = new File(Constants.START_FILE);
-	final File errorFile = new File(Constants.ERROR_FILE);
-	cleanup(startFile, errorFile);
-	TextFiles.write(startFile, STRINGS.EMPTY);
-	final Planet ferengi = new Planet("Ferengis", true, 1, 500);
-	final Planet vulcan = new Planet("Vulcanos", false, 5, 1000);
-	final Planet betasoid = new Planet("Betasoides", true, 3, 2000);
-	for (int i = 0; i < _daysToForecast; i++) {
-	    final String forecast = getForecast(ferengi, vulcan, betasoid, i);
-	    _forecast.add(
-		new JsonObjectBuilder()
-		    .add(Constants.DIA, i)
-		    .add(Constants.CONDICION, forecast)
-		    .getAsJsonObject()
-	    );
-	    newDay(ferengi, betasoid, vulcan);
-	}
+    private void logNewPlanet(final Planet p) {
+	_logger.info(new StringBuilder("Created new planet. Name: ").append(p.getName()).append("; Current position: ").append(p.getCurrentPosition()).append("; Distance from sun: ").append(p.getDistanceFromSun()).append("; Speed: ").append(p.getSpeed()).append("; Is clockwise: ").append(p.isClockwise()).toString());
+    }
+
+    private void logNewPlanets(final Planet ferengi, final Planet vulcan, final Planet betasoid) {
+	logNewPlanet(ferengi);
+	logNewPlanet(vulcan);
+	logNewPlanet(betasoid);
+    }
+    
+    private void finish(final File startFile, final File errorFile) {
 	if (TextFiles.write(_jsonDataFile, Json.JsonElementToPrettyString(
 	    new JsonObjectBuilder()
 		.add(Constants.DIA_MAXIMA_LLUVIA, _maxRainDay)
@@ -219,6 +216,29 @@ public class Forecast {
 	    cleanup(startFile, null);
 	    TextFiles.write(errorFile, STRINGS.EMPTY);
 	}
+    }
+
+    public void predict() {
+	final File startFile = new File(Constants.START_FILE);
+	final File errorFile = new File(Constants.ERROR_FILE);
+	cleanup(startFile, errorFile);
+	TextFiles.write(startFile, STRINGS.EMPTY);
+	final Planet ferengi = new Planet("Ferengis", true, 1, 500);
+	final Planet vulcan = new Planet("Vulcanos", false, 5, 1000);
+	final Planet betasoid = new Planet("Betasoides", true, 3, 2000);
+	logNewPlanets(ferengi, vulcan, betasoid);
+	for (int i = 0; i < _daysToForecast; i++) {
+	    final String forecast = getForecast(ferengi, vulcan, betasoid, i);
+	    _logger.trace(new StringBuilder("Día: ").append(i).append(". Posiciones planetas. ").append(ferengi.getName()).append(": ").append(ferengi.getCurrentPosition()).append(". ").append(vulcan.getName()).append(": ").append(vulcan.getCurrentPosition()).append(". ").append(betasoid.getName()).append(": ").append(betasoid.getCurrentPosition()).append(". Pronóstico: ").append(forecast).toString());
+	    _forecast.add(
+		new JsonObjectBuilder()
+		    .add(Constants.DIA, i)
+		    .add(Constants.CONDICION, forecast)
+		    .getAsJsonObject()
+	    );
+	    newDay(ferengi, betasoid, vulcan);
+	}
+	finish(startFile, errorFile);
     }
 
 }
