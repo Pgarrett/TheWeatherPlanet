@@ -18,7 +18,7 @@ public class Forecast {
 
     private final Integer _yearsToForecast;
     private final Integer _daysToForecast;
-
+    private final File _dataDirectory;
     private final File _jsonDataFile;
 
     private final JsonArray _forecast;
@@ -32,10 +32,11 @@ public class Forecast {
 
     private static Logger _logger = Logger.getLogger(Forecast.class);
 
-    public Forecast(final Integer yearsToForecast, final File jsonDataFile) {
+    public Forecast(final Integer yearsToForecast, final File dataDirectory, final File jsonDataFile) {
 	_yearsToForecast = yearsToForecast;
 	_daysToForecast = _yearsToForecast * Constants.DAYS_OF_YEAR;
 	_forecast = new JsonArray();
+	_dataDirectory = dataDirectory;
 	_jsonDataFile = jsonDataFile;
     }
 
@@ -62,6 +63,7 @@ public class Forecast {
 	final double m1 = Utilities.round((betasoidY - vulcanY) / (betasoidX - vulcanX));
 	final double m2 = Utilities.round((betasoidY - ferengiY) / (betasoidX - ferengiX));
 	final double m3 = Utilities.round((vulcanY - ferengiY) / (vulcanX - ferengiX));
+	_logger.trace(new StringBuilder("Día: ").append(day).append(". Pendiente rectas: -m1: ").append(m1).append("; -m2: ").append(m2).append("; -m3: ").append(m3).toString());
 	return m1 == m2 && m2 == m3;
     }
 
@@ -97,25 +99,33 @@ public class Forecast {
     private boolean isSunInMiddle(final int maxP, final int minP, final int betasoidP) {
 	final int midPointB = (maxP + 180) % 360;
 	if (maxP >= 0 && maxP < 90) {
+	    _logger.trace("Camino de solución: maxP >= 0 && maxP < 90");
 	    if (betasoidP >= 180 && betasoidP < 270) {
+		_logger.trace("Camino de solución: betasoidP >= 180 && betasoidP < 270");
 		return !(minP > maxP && minP < midPointB);
 	    } else {
 		return false;
 	    }
 	} else if (maxP >= 90 && maxP < 180) {
+	    _logger.trace("Camino de solución: maxP >= 90 && maxP < 180");
 	    if (betasoidP > 180 && betasoidP < midPointB) {
+		_logger.trace("Camino de solución: betasoidP > 180 && betasoidP < midPointB");
 		return minP > 0 && minP < (betasoidP + 180) % 360;
 	    } else {
 		return false;
 	    }
 	} else if (maxP >= 180 && maxP < 270) {
+	    _logger.trace("Camino de solución: maxP >= 180 && maxP < 270");
 	    if (minP > midPointB) {
+		_logger.trace("Camino de solución: minP > midPointB");
 		return !(betasoidP > midPointB && betasoidP < (minP + 180) % 360);
 	    } else {
 		return betasoidP > midPointB && betasoidP < (minP + 180) % 360;
 	    }
 	} else {
+	    _logger.trace("Camino de solución: maxP >= 270 && maxP < 360");
 	    if (minP < midPointB) {
+		_logger.trace("Camino de solución: minP < midPointB");
 		return betasoidP > midPointB && betasoidP < (minP + 180) % 360;
 	    } else {
 		return !(betasoidP > midPointB && betasoidP < (minP + 180) % 360);
@@ -123,14 +133,16 @@ public class Forecast {
 	}
     }
 
-    private boolean isRainyDayForecast(final int ferengiP, final int vulcanP, final int betasoidP) {
+    private boolean isRainyDayForecast(final int ferengiP, final int vulcanP, final int betasoidP, final int day) {
 	final int betasoidPB = (betasoidP + 180) % 360;
 	final int ferengiSide = getSide(ferengiP, betasoidP, betasoidPB);
 	final int vulcanSide = getSide(vulcanP, betasoidP, betasoidPB);
 	if (areInSameQuadrant(ferengiP, vulcanP, betasoidP)) {
+	    _logger.trace(new StringBuilder("Día: ").append(day).append(". Todos los planetas se encuentran en el mismo cuadrante.").toString());
 	    return false;
 	} else {
 	    if (ferengiSide == vulcanSide) {
+		_logger.trace(new StringBuilder("Día: ").append(day).append(". Planetas ferengi y vulcan se encuentran en el mismo semi-circulo.").toString());
 		return false;
 	    } else {
 		if (ferengiP > vulcanP) {
@@ -151,6 +163,7 @@ public class Forecast {
 	final double vulcanBetasoidD = getDistanceBetweenPlanets(vulcan, betasoid);
 	final double betasoidFerengiD = getDistanceBetweenPlanets(betasoid, ferengi);
 	final double totalDistance = ferengiVulcanD + vulcanBetasoidD + betasoidFerengiD;
+	_logger.trace(new StringBuilder("Día: ").append(day).append(". Tamaño triangulo: ").append(totalDistance).toString());
 	if (totalDistance >= _maxRainDayTriangle) {
 	    _maxRainDayTriangle = totalDistance;
 	    _maxRainDay = day;
@@ -167,14 +180,14 @@ public class Forecast {
 	} else if (isOptimumConditionForecast(ferengi, vulcan, betasoid, day)) {
 	    _totalOptimum++;
 	    return Constants.OPTIMA;
-	} else if (isRainyDayForecast(ferengiP, vulcanP, betasoidP)) {
+	} else if (isRainyDayForecast(ferengiP, vulcanP, betasoidP, day)) {
 	    _totalRain++;
 	    updateMaxTriangleSize(ferengi, vulcan, betasoid, day);
 	    return Constants.LLUVIA;
 	}
 	return Constants.SIN_INFORMACION;
     }
-    
+
     private void logFileNotDeleted(final File file) {
 	_logger.error(Strings.concat("El archivo '", file.getAbsolutePath(), "' no pudo ser eliminado."));
     }
@@ -202,6 +215,14 @@ public class Forecast {
 	logNewPlanet(betasoid);
     }
     
+    private void logFinishSummary() {
+	_logger.info(new StringBuilder("Resumen: ")
+		.append(Constants.DIA_MAXIMA_LLUVIA).append(": ").append(_maxRainDay).append("; ")
+		.append(Constants.TOTAL_SEQUIA).append(": ").append(_totalDry).append("; ")
+		.append(Constants.TOTAL_LLUVIA).append(": ").append(_totalRain).append("; ")
+		.append(Constants.TOTAL_CONDICIONES_OPTIMAS).append(": ").append(_totalOptimum).toString());
+    }
+
     private void finish(final File startFile, final File errorFile) {
 	if (TextFiles.write(_jsonDataFile, Json.JsonElementToPrettyString(
 	    new JsonObjectBuilder()
@@ -212,15 +233,18 @@ public class Forecast {
 		.add(Constants.PRONOSTICO, _forecast)
 		.getAsJsonObject()))) {
 	    cleanup(startFile, errorFile);
+	    logFinishSummary();
+	    _logger.info("Escritura del archivo final realizada correctamente.");
 	} else {
+	    _logger.error("Error en la escritura del archivo final.");
 	    cleanup(startFile, null);
 	    TextFiles.write(errorFile, STRINGS.EMPTY);
 	}
     }
 
     public void predict() {
-	final File startFile = new File(Constants.START_FILE);
-	final File errorFile = new File(Constants.ERROR_FILE);
+	final File startFile = new File(_dataDirectory, Constants.START_FILE);
+	final File errorFile = new File(_dataDirectory, Constants.ERROR_FILE);
 	cleanup(startFile, errorFile);
 	TextFiles.write(startFile, STRINGS.EMPTY);
 	final Planet ferengi = new Planet("Ferengis", true, 1, 500);

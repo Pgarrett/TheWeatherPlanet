@@ -40,8 +40,12 @@ public class TheWeatherPlanet {
 	    if (Ace.assigned(config)) {
 		_yearsToForecast = Json.obtainInteger(config, "years");
 		_dataDirectory = new File(Json.obtainString(config, "data-directory"));
-		_dataFile = new File(_dataDirectory, Json.obtainString(config, "data-file"));
+		if (_dataDirectory.exists()) {
+		    _dataFile = new File(_dataDirectory, Json.obtainString(config, "data-file"));
 		return true;
+		}
+		_logger.error(Strings.concat("El directorio '", Json.obtainString(config, "data-directory"), "' no existe."));
+		return false;
 	    } else {
 		_logger.error("La configuración no es correcta, por favor verificar.");
 		return false;
@@ -60,7 +64,7 @@ public class TheWeatherPlanet {
 	if (init()) {
 	    _logger.info(Constants.INIT_MESSAGE);
 	    _logger.info("Application start.");
-	    final Forecast f = new Forecast(_yearsToForecast, _dataFile);
+	    final Forecast f = new Forecast(_yearsToForecast, _dataDirectory, _dataFile);
 	    f.predict();
 	    _logger.info(Constants.APPLICATION_EXIT);
 	    System.exit(0);
