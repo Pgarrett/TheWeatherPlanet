@@ -39,3 +39,17 @@ La aplicacicón no contempla años bisiestos, por lo tanto la cantidad de días 
 La posición de cada planeta puede ser expresada de dos formas:
 * En grados, sea p la posición del planeta, luego 0 <= p < 360.
 * En coordenadas (x, y) sobre ejes cartesianos.
+
+Los distintos pronósticos que se pueden obtener son:
+* Sequía
+* Condiciones Óptimas de Presión y Temperatura
+* Lluvia
+* Sin información
+
+
+### <u>Sequía</u>
+Para determinar si el día pertenece a una sequía, los planetas deben estar alineados entre ellos y el sol. Por lo tanto, al trazar una recta imaginaria que pase por algún planeta y el sol, los demás planetas deben ser puntos de esta recta. En términos de la aplicación, la posición de un planeta en grados, debe ser la misma a todos los demás, ó, lo que es equivalente, debe encontrarse a 180 grados.
+
+### <u>Condiciones Óptimas de Presión y Temperatura</u>
+
+En este caso, los planetas deben estar alineados entre si
